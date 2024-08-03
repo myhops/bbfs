@@ -11,6 +11,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/myhops/bbfs/nulllog"
 )
 
 type SecretString string
@@ -36,8 +38,13 @@ type GetFileContentCommand struct {
 	At         string
 }
 
+func (c *Client) initLogger() {
+	if c.Logger == nil {
+		c.Logger = nulllog.Logger()
+	}
+}
+
 func (c *GetFileContentCommand) newRequestWithContext(ctx context.Context, baseURL string) (*http.Request, error) {
-	// https://bitbucket.belastingdienst.nl/rest/api/latest/projects/:projectKey/repos/:repoSlug/raw/olo-kor-eb-service/index.html
 	u, err := url.Parse(fmt.Sprintf("%s/projects/%s/repos/%s/raw/%s", baseURL, c.ProjectKey, c.RepoSlug, c.FilePath))
 	if err != nil {
 		return nil, err
@@ -98,6 +105,7 @@ func (c *Client) AuthorizeRequest(req *http.Request) {
 }
 
 func (c *Client) GetFileContent(ctx context.Context, cmd *GetFileContentCommand) ([]byte, error) {
+	c.initLogger()
 	// Validate the request.
 	if err := cmd.Validate(); err != nil {
 		return nil, fmt.Errorf("command not valid: %w", err)
@@ -395,7 +403,6 @@ type OpenRawFileCommand struct {
 }
 
 func (c *OpenRawFileCommand) newRequestWithContext(ctx context.Context, baseURL string) (*http.Request, error) {
-	// https://bitbucket.belastingdienst.nl/rest/api/latest/projects/:projectKey/repos/:repoSlug/raw/:path
 	u, err := url.Parse(fmt.Sprintf("%s/projects/%s/repos/%s/raw/%s", baseURL, c.ProjectKey, c.RepoSlug, c.FilePath))
 	if err != nil {
 		return nil, err

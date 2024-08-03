@@ -3,6 +3,8 @@ package bbclient
 import (
 	"context"
 	"testing"
+
+	"github.com/myhops/bbfs/nulllog"
 )
 
 const (
@@ -13,6 +15,7 @@ func TestGetReadme(t *testing.T) {
 	c := &Client{
 		BaseURL:   "https://bitbucket.belastingdienst.nl/rest/api/latest",
 		AccessKey: accessKey,
+		Logger: nulllog.Logger(),
 	}
 	content, err := c.GetFileContent(context.Background(), &GetFileContentCommand{
 		ProjectKey: "~zandp06",
