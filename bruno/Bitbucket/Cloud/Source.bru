@@ -1,0 +1,22 @@
+meta {
+  name: Source
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseURL}}/repositories/:workspace/:repo_slug/src/:commit/:path?format=meta
+  body: none
+  auth: none
+}
+
+params:query {
+  format: meta
+}
+
+params:path {
+  commit: adccb3c9f5e0b2a6268a2e86d22e5429f1a56aef
+  path: test
+  workspace: myhops
+  repo_slug: testflags
+}

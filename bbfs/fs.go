@@ -12,6 +12,11 @@ import (
 	"github.com/myhops/bbfs/bbclient/server"
 )
 
+// Define the interface for accessing the Bitbucket repositories.
+type Bitbucket interface {
+	
+}
+
 const (
 	ApiPath        = "/rest/api"
 	DefaultVersion = "latest"
@@ -31,14 +36,14 @@ type Config struct {
 	ApiVersion     string
 }
 
-func NewFS(cfg *Config) *bitbucketFS {
+func NewFS(cfg *Config) *bbFS {
 	u := url.URL{
 		Scheme: "https",
 		Host:   cfg.Host,
 		Path:   ApiPath,
 	}
 
-	return &bitbucketFS{
+	return &bbFS{
 		client: &server.Client{
 			BaseURL:   u.String(),
 			AccessKey: server.SecretString(cfg.AccessKey),
@@ -50,7 +55,7 @@ func NewFS(cfg *Config) *bitbucketFS {
 	}
 }
 
-type bitbucketFS struct {
+type bbFS struct {
 	client     *server.Client
 	projectKey string
 	repoSlug   string
@@ -58,7 +63,7 @@ type bitbucketFS struct {
 	root       string
 }
 
-func (b *bitbucketFS) Sub(dir string) (fs.FS, error) {
+func (b *bbFS) Sub(dir string) (fs.FS, error) {
 	// check if the dir exists.
 	f, err := b.Open(dir)
 	if err != nil {
@@ -73,7 +78,7 @@ func (b *bitbucketFS) Sub(dir string) (fs.FS, error) {
 		return nil, fs.ErrInvalid
 	}
 
-	return &bitbucketFS{
+	return &bbFS{
 		root:       filepath.Join(b.root, fi.Name()),
 		client:     b.client,
 		projectKey: b.projectKey,
@@ -82,8 +87,15 @@ func (b *bitbucketFS) Sub(dir string) (fs.FS, error) {
 	}, nil
 }
 
+func isModeDir(t string) fs.FileMode {
+	if t == "DIRECTORY" {
+		return fs.ModeDir
+	}
+	return 0
+}
+
 // Open opens the file on the repository.
-func (b *bitbucketFS) Open(name string) (fs.File, error) {
+func (b *bbFS) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{
 			Path: name,
@@ -99,12 +111,12 @@ func (b *bitbucketFS) Open(name string) (fs.File, error) {
 
 	// Test if in root.
 	if fullPath == "." {
-		return &bitbucketFile{
+		return &bbFile{
 			fullPath: fullPath,
 			bfs:      b,
-			fi: &bitbucketFileInfo{
-				name:  ".",
-				isDir: true,
+			fi: &bbFileInfo{
+				name: ".",
+				mode: fs.ModeDir,
 			},
 		}, nil
 	}
@@ -134,12 +146,12 @@ func (b *bitbucketFS) Open(name string) (fs.File, error) {
 	}
 
 	// Create the file.
-	res := &bitbucketFile{
+	res := &bbFile{
 		fullPath: fullPath,
 		bfs:      b,
-		fi: &bitbucketFileInfo{
+		fi: &bbFileInfo{
 			name:  found.Name,
-			isDir: found.Type == "DIRECTORY",
+			mode: isModeDir(found.Type),
 			size:  found.Size,
 		},
 	}
@@ -149,10 +161,10 @@ func (b *bitbucketFS) Open(name string) (fs.File, error) {
 	return res, nil
 }
 
-type bitbucketFile struct {
-	bfs      *bitbucketFS
+type bbFile struct {
+	bfs      *bbFS
 	fullPath string
-	fi       *bitbucketFileInfo
+	fi       *bbFileInfo
 
 	data io.ReadCloser
 
@@ -160,7 +172,7 @@ type bitbucketFile struct {
 	lastErr error
 }
 
-func (f *bitbucketFile) Read(b []byte) (int, error) {
+func (f *bbFile) Read(b []byte) (int, error) {
 	if f.data != nil {
 		// read the data as a whole
 		return f.data.Read(b)
@@ -178,11 +190,11 @@ func (f *bitbucketFile) Read(b []byte) (int, error) {
 	return f.data.Read(b)
 }
 
-func (f *bitbucketFile) Stat() (fs.FileInfo, error) {
+func (f *bbFile) Stat() (fs.FileInfo, error) {
 	return f.fi, nil
 }
 
-func (f *bitbucketFile) Close() error {
+func (f *bbFile) Close() error {
 	if f.data == nil {
 		return nil
 	}
@@ -191,7 +203,7 @@ func (f *bitbucketFile) Close() error {
 	return tmp.Close()
 }
 
-func (f *bitbucketFile) ReadDir(n int) ([]fs.DirEntry, error) {
+func (f *bbFile) ReadDir(n int) ([]fs.DirEntry, error) {
 	if f.lastErr != nil {
 		return nil, f.lastErr
 	}
@@ -232,12 +244,12 @@ func (f *bitbucketFile) ReadDir(n int) ([]fs.DirEntry, error) {
 			return res, nil
 		}
 
-		bf := &bitbucketFile{
+		bf := &bbFile{
 			fullPath: filepath.Join(f.fullPath, ff.Name),
-			fi: &bitbucketFileInfo{
-				name:  ff.Name,
-				isDir: ff.Type == "DIRECTORY",
-				size:  ff.Size,
+			fi: &bbFileInfo{
+				name: ff.Name,
+				mode: isModeDir(ff.Type),
+				size: ff.Size,
 			},
 		}
 		if bf.IsDir() {
@@ -248,53 +260,52 @@ func (f *bitbucketFile) ReadDir(n int) ([]fs.DirEntry, error) {
 	}
 }
 
-type bitbucketFileInfo struct {
+type bbFileInfo struct {
 	name    string
 	size    int64
 	mode    fs.FileMode
 	modTime time.Time
-	isDir   bool
 }
 
-func (b *bitbucketFileInfo) Name() string {
+func (b *bbFileInfo) Name() string {
 	return b.name
 }
 
-func (b *bitbucketFile) Name() string {
+func (b *bbFile) Name() string {
 	return b.fi.name
 }
 
-func (b *bitbucketFileInfo) Size() int64 {
+func (b *bbFileInfo) Size() int64 {
 	return b.size
 }
 
-func (b *bitbucketFileInfo) Mode() fs.FileMode {
+func (b *bbFileInfo) Mode() fs.FileMode {
 	return b.mode
 }
 
-func (b *bitbucketFileInfo) ModTime() time.Time {
+func (b *bbFileInfo) ModTime() time.Time {
 	return b.modTime
 }
 
-func (b *bitbucketFileInfo) IsDir() bool {
-	return b.isDir
+func (b *bbFileInfo) IsDir() bool {
+	return b.mode.IsDir()
 }
 
-func (b *bitbucketFile) IsDir() bool {
-	return b.fi.isDir
+func (b *bbFile) IsDir() bool {
+	return b.fi.IsDir()
 }
 
-func (b *bitbucketFileInfo) Sys() any {
+func (b *bbFileInfo) Sys() any {
 	return nil
 }
 
-func (f *bitbucketFile) Type() fs.FileMode {
+func (f *bbFile) Type() fs.FileMode {
 	return f.fi.mode
 }
 
-func (f *bitbucketFile) Info() (fs.FileInfo, error) {
+func (f *bbFile) Info() (fs.FileInfo, error) {
 	return f.fi, nil
 }
 
-var _ fs.DirEntry = &bitbucketFile{}
-var _ fs.ReadDirFile = &bitbucketFile{}
+var _ fs.DirEntry = &bbFile{}
+var _ fs.ReadDirFile = &bbFile{}

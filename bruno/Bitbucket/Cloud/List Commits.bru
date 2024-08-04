@@ -1,0 +1,21 @@
+meta {
+  name: List Commits
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseURL}}/repositories/:workspace/:repo_slug/commits?pagelen=2&page=1
+  body: none
+  auth: none
+}
+
+params:query {
+  pagelen: 2
+  page: 1
+}
+
+params:path {
+  workspace: myhops
+  repo_slug: testflags
+}
