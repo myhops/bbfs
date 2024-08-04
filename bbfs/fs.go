@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/myhops/bbfs/bbclient"
+	"github.com/myhops/bbfs/bbclient/server"
 )
 
 const (
@@ -39,9 +39,9 @@ func NewFS(cfg *Config) *bitbucketFS {
 	}
 
 	return &bitbucketFS{
-		client: &bbclient.Client{
+		client: &server.Client{
 			BaseURL:   u.String(),
-			AccessKey: bbclient.SecretString(cfg.AccessKey),
+			AccessKey: server.SecretString(cfg.AccessKey),
 		},
 		repoSlug:   cfg.RepositorySlug,
 		projectKey: cfg.ProjectKey,
@@ -51,7 +51,7 @@ func NewFS(cfg *Config) *bitbucketFS {
 }
 
 type bitbucketFS struct {
-	client     *bbclient.Client
+	client     *server.Client
 	projectKey string
 	repoSlug   string
 	accessKey  string
@@ -113,7 +113,7 @@ func (b *bitbucketFS) Open(name string) (fs.File, error) {
 	}
 
 	// Check if the file exists in the directory.
-	iter, err := b.client.GetFilesIterator(context.Background(), &bbclient.GetFilesCommand{
+	iter, err := b.client.GetFilesIterator(context.Background(), &server.GetFilesCommand{
 		FilePath:   parent,
 		ProjectKey: b.projectKey,
 		RepoSlug:   b.repoSlug,
@@ -123,7 +123,7 @@ func (b *bitbucketFS) Open(name string) (fs.File, error) {
 		return nil, err
 	}
 
-	var found *bbclient.FileInfo
+	var found *server.FileInfo
 	for f := iter.Next(); f != nil; f = iter.Next() {
 		if f.Name == base {
 			found = f
@@ -156,7 +156,7 @@ type bitbucketFile struct {
 
 	data io.ReadCloser
 
-	dirIter *bbclient.FilesIterator
+	dirIter *server.FilesIterator
 	lastErr error
 }
 
@@ -166,7 +166,7 @@ func (f *bitbucketFile) Read(b []byte) (int, error) {
 		return f.data.Read(b)
 	}
 
-	r, err := f.bfs.client.OpenRawFile(context.Background(), &bbclient.OpenRawFileCommand{
+	r, err := f.bfs.client.OpenRawFile(context.Background(), &server.OpenRawFileCommand{
 		ProjectKey: f.bfs.projectKey,
 		RepoSlug:   f.bfs.repoSlug,
 		FilePath:   f.fullPath,
@@ -200,7 +200,7 @@ func (f *bitbucketFile) ReadDir(n int) ([]fs.DirEntry, error) {
 		fullPath = ""
 	}
 	if f.dirIter == nil {
-		iter, err := f.bfs.client.GetFilesIterator(context.Background(), &bbclient.GetFilesCommand{
+		iter, err := f.bfs.client.GetFilesIterator(context.Background(), &server.GetFilesCommand{
 			FilePath:   fullPath,
 			ProjectKey: f.bfs.projectKey,
 			RepoSlug:   f.bfs.repoSlug,

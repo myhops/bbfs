@@ -1,4 +1,4 @@
-package bbclient
+package server
 
 import (
 	"bytes"
