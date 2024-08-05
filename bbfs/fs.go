@@ -14,7 +14,6 @@ import (
 
 // Define the interface for accessing the Bitbucket repositories.
 type Bitbucket interface {
-	
 }
 
 const (
@@ -37,10 +36,14 @@ type Config struct {
 }
 
 func NewFS(cfg *Config) *bbFS {
+	version := cfg.ApiVersion
+	if version == "" {
+		version = DefaultVersion
+	}
 	u := url.URL{
 		Scheme: "https",
 		Host:   cfg.Host,
-		Path:   ApiPath,
+		Path:   filepath.Join(ApiPath, version),
 	}
 
 	return &bbFS{
@@ -150,9 +153,9 @@ func (b *bbFS) Open(name string) (fs.File, error) {
 		fullPath: fullPath,
 		bfs:      b,
 		fi: &bbFileInfo{
-			name:  found.Name,
+			name: found.Name,
 			mode: isModeDir(found.Type),
-			size:  found.Size,
+			size: found.Size,
 		},
 	}
 	if res.IsDir() {
