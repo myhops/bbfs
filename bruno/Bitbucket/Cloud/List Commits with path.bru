@@ -1,0 +1,24 @@
+meta {
+  name: List Commits with path
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseURL}}/repositories/:workspace/:repo_slug/commits/:revision
+  body: none
+  auth: none
+}
+
+params:query {
+  ~include: tag1
+  ~pagelen: 2
+  ~page: 1
+  ~exclude: tag1
+}
+
+params:path {
+  revision: refs
+  workspace: myhops
+  repo_slug: testflags
+}

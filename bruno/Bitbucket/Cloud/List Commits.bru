@@ -5,14 +5,14 @@ meta {
 }
 
 get {
-  url: {{baseURL}}/repositories/:workspace/:repo_slug/commits?pagelen=2&page=1
+  url: {{baseURL}}/repositories/:workspace/:repo_slug/commits
   body: none
   auth: none
 }
 
 params:query {
-  pagelen: 2
-  page: 1
+  ~pagelen: 2
+  ~page: 1
 }
 
 params:path {
