@@ -26,19 +26,30 @@ var (
 	ErrNotImplementedYet = errors.New("not implemented yet")
 )
 
+// Config contains the configuration for a bitbucket file system.
 type Config struct {
+	// Host is the hostname of the server
 	Host           string
+	// ProjectKey is the name of the project or the user of the repo
 	ProjectKey     string
+	// RepositorySlug is the name of the repository
 	RepositorySlug string
+	// Root is the root of the file system in the repo,
+	// must be a an existing directory
 	Root           string
+	// AccessKey is an http access key for the repo or the project
 	AccessKey      string
+	// At is a branch, tag or commit
 	At             string
+	// ApiVersion is ignored
 	ApiVersion     string
 }
 
+// Options is the type for NewFS options.
 type Option func(*bbFS)
 
-func NewFS(cfg *Config, opts ...Option) *bbFS {
+// NewFS returns a new FS.
+func NewFS(cfg *Config, opts ...Option) fs.FS {
 	version := cfg.ApiVersion
 	if version == "" {
 		version = DefaultVersion
@@ -65,6 +76,7 @@ func NewFS(cfg *Config, opts ...Option) *bbFS {
 	return res
 }
 
+// WithLogger add a logger to the FS.
 func WithLogger(l *slog.Logger) Option {
 	return func(f *bbFS) {
 		f.client.Logger = l
@@ -79,6 +91,7 @@ type bbFS struct {
 	root       string
 }
 
+// Sub returns a new FS with dir as root.
 func (b *bbFS) Sub(dir string) (fs.FS, error) {
 	// check if the dir exists.
 	f, err := b.Open(dir)
@@ -177,6 +190,7 @@ func (b *bbFS) Open(name string) (fs.File, error) {
 	return res, nil
 }
 
+// bbFile implements fs.File.
 type bbFile struct {
 	bfs      *bbFS
 	fullPath string
@@ -188,6 +202,7 @@ type bbFile struct {
 	lastErr error
 }
 
+// Read reads from the file.
 func (f *bbFile) Read(b []byte) (int, error) {
 	if f.data != nil {
 		// read the data as a whole
@@ -206,6 +221,7 @@ func (f *bbFile) Read(b []byte) (int, error) {
 	return f.data.Read(b)
 }
 
+// Start returns a FileInfo.
 func (f *bbFile) Stat() (fs.FileInfo, error) {
 	return f.fi, nil
 }
@@ -219,6 +235,7 @@ func (f *bbFile) Close() error {
 	return tmp.Close()
 }
 
+// ReadDir returns an array of DirEntry's.
 func (f *bbFile) ReadDir(n int) ([]fs.DirEntry, error) {
 	if f.lastErr != nil {
 		return nil, f.lastErr
@@ -276,6 +293,7 @@ func (f *bbFile) ReadDir(n int) ([]fs.DirEntry, error) {
 	}
 }
 
+// bbfileInfo implements fs.FileInfo and fs.DirEntry
 type bbFileInfo struct {
 	name    string
 	size    int64
@@ -283,26 +301,32 @@ type bbFileInfo struct {
 	modTime time.Time
 }
 
+// Name returns the name of the file.
 func (b *bbFileInfo) Name() string {
 	return b.name
 }
 
+// Name returns the name of the file.
 func (b *bbFile) Name() string {
 	return b.fi.name
 }
 
+// Size returns the size of a regular file or 0 for a directory.
 func (b *bbFileInfo) Size() int64 {
 	return b.size
 }
 
+// Mode returns the Mode of the file.
 func (b *bbFileInfo) Mode() fs.FileMode {
 	return b.mode
 }
 
+// ModTime does not return valuable information.
 func (b *bbFileInfo) ModTime() time.Time {
 	return b.modTime
 }
 
+// IsDir returns true if the file is a directory.
 func (b *bbFileInfo) IsDir() bool {
 	return b.mode.IsDir()
 }
