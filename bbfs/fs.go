@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/url"
 	"path/filepath"
 	"time"
@@ -35,7 +36,9 @@ type Config struct {
 	ApiVersion     string
 }
 
-func NewFS(cfg *Config) *bbFS {
+type Option func(*bbFS)
+
+func NewFS(cfg *Config, opts ...Option) *bbFS {
 	version := cfg.ApiVersion
 	if version == "" {
 		version = DefaultVersion
@@ -46,7 +49,7 @@ func NewFS(cfg *Config) *bbFS {
 		Path:   filepath.Join(ApiPath, version),
 	}
 
-	return &bbFS{
+	res := &bbFS{
 		client: &server.Client{
 			BaseURL:   u.String(),
 			AccessKey: server.SecretString(cfg.AccessKey),
@@ -55,6 +58,16 @@ func NewFS(cfg *Config) *bbFS {
 		projectKey: cfg.ProjectKey,
 		accessKey:  cfg.AccessKey,
 		root:       cfg.Root,
+	}
+	for _, o := range opts {
+		o(res)
+	}
+	return res
+}
+
+func WithLogger(l *slog.Logger) Option {
+	return func(f *bbFS) {
+		f.client.Logger = l
 	}
 }
 

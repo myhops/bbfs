@@ -2,6 +2,8 @@ package bbfs
 
 import (
 	"io/fs"
+	"log/slog"
+	"os"
 	"testing"
 	"testing/fstest"
 )
@@ -18,7 +20,9 @@ var testCfg = &Config{
 }
 
 func TestMe(t *testing.T) {
-	bfs := NewFS(testCfg)
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{}))
+
+	bfs := NewFS(testCfg, WithLogger(logger))
 	if err := fstest.TestFS(bfs, "hugo/TestBitbucketAccess", "hugo", "go.mod"); err != nil {
 		t.Errorf("%s", err.Error())
 	}
