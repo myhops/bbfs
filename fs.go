@@ -29,20 +29,20 @@ var (
 // Config contains the configuration for a bitbucket file system.
 type Config struct {
 	// Host is the hostname of the server
-	Host           string
+	Host string
 	// ProjectKey is the name of the project or the user of the repo
-	ProjectKey     string
+	ProjectKey string
 	// RepositorySlug is the name of the repository
 	RepositorySlug string
 	// Root is the root of the file system in the repo,
 	// must be a an existing directory
-	Root           string
+	Root string
 	// AccessKey is an http access key for the repo or the project
-	AccessKey      string
+	AccessKey string
 	// At is a branch, tag or commit
-	At             string
+	At string
 	// ApiVersion is ignored
-	ApiVersion     string
+	ApiVersion string
 }
 
 // Options is the type for NewFS options.
@@ -69,6 +69,7 @@ func NewFS(cfg *Config, opts ...Option) fs.FS {
 		projectKey: cfg.ProjectKey,
 		accessKey:  cfg.AccessKey,
 		root:       cfg.Root,
+		at:         cfg.At,
 	}
 	for _, o := range opts {
 		o(res)
@@ -89,6 +90,7 @@ type bbFS struct {
 	repoSlug   string
 	accessKey  string
 	root       string
+	at         string
 }
 
 // Sub returns a new FS with dir as root.
@@ -113,6 +115,7 @@ func (b *bbFS) Sub(dir string) (fs.FS, error) {
 		projectKey: b.projectKey,
 		repoSlug:   b.repoSlug,
 		accessKey:  b.accessKey,
+		at:         b.at,
 	}, nil
 }
 
@@ -159,6 +162,7 @@ func (b *bbFS) Open(name string) (fs.File, error) {
 		ProjectKey: b.projectKey,
 		RepoSlug:   b.repoSlug,
 		Limit:      1000,
+		At:         b.at,
 	})
 	if err != nil {
 		return nil, err
@@ -213,6 +217,7 @@ func (f *bbFile) Read(b []byte) (int, error) {
 		ProjectKey: f.bfs.projectKey,
 		RepoSlug:   f.bfs.repoSlug,
 		FilePath:   f.fullPath,
+		At:         f.bfs.at,
 	})
 	if err != nil {
 		return 0, err
@@ -250,6 +255,7 @@ func (f *bbFile) ReadDir(n int) ([]fs.DirEntry, error) {
 			ProjectKey: f.bfs.projectKey,
 			RepoSlug:   f.bfs.repoSlug,
 			Limit:      1000,
+			At:         f.bfs.at,
 		})
 		if err != nil {
 			return nil, err
