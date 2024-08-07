@@ -8,6 +8,7 @@ import (
 	"net/url"
 )
 
+// GetTagsCommand is the command to retrieve all tags from the repository.
 type GetTagsCommand struct {
 	ProjectKey string
 	RepoSlug   string

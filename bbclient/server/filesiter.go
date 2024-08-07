@@ -5,6 +5,7 @@ import (
 	"io"
 )
 
+// FilesIterator is an iterator for the files in a directory in the repository.
 type FilesIterator struct {
 	client      *Client
 	lastCommand *GetFilesCommand
@@ -14,6 +15,7 @@ type FilesIterator struct {
 	ctx         context.Context
 }
 
+// Next returns the next FileInfo in the directory, or nil if all entries have been read.
 func (i *FilesIterator) Next() *FileInfo {
 	if i.lastError != nil {
 		return nil
@@ -35,10 +37,12 @@ func (i *FilesIterator) Next() *FileInfo {
 	return res
 }
 
+// Err returns the last occured error.
 func (i *FilesIterator) Err() error {
 	return i.lastError
 }
 
+// loadPage loads the next page from the directory.
 func (i *FilesIterator) loadPage() error {
 	i.lastCommand.Start = i.lastResult.NextStart
 	res, err := i.client.GetFiles(i.ctx, i.lastCommand)

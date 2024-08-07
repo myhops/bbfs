@@ -18,7 +18,9 @@ type Bitbucket interface {
 }
 
 const (
+	// Default api path for Bitbucket Server
 	ApiPath        = "/rest/api"
+	// API version
 	DefaultVersion = "latest"
 )
 
@@ -77,7 +79,7 @@ func NewFS(cfg *Config, opts ...Option) fs.FS {
 	return res
 }
 
-// WithLogger add a logger to the FS.
+// WithLogger adds a logger to the FS.
 func WithLogger(l *slog.Logger) Option {
 	return func(f *bbFS) {
 		f.client.Logger = l
@@ -226,7 +228,7 @@ func (f *bbFile) Read(b []byte) (int, error) {
 	return f.data.Read(b)
 }
 
-// Start returns a FileInfo.
+// Stat returns a FileInfo.
 func (f *bbFile) Stat() (fs.FileInfo, error) {
 	return f.fi, nil
 }
