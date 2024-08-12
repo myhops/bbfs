@@ -36,6 +36,14 @@ type Config struct {
 	ApiVersion     string
 }
 
+type bbFS struct {
+	client     *server.Client
+	projectKey string
+	repoSlug   string
+	accessKey  string
+	root       string
+}
+
 type Option func(*bbFS)
 
 func NewFS(cfg *Config, opts ...Option) *bbFS {
@@ -69,14 +77,6 @@ func WithLogger(l *slog.Logger) Option {
 	return func(f *bbFS) {
 		f.client.Logger = l
 	}
-}
-
-type bbFS struct {
-	client     *server.Client
-	projectKey string
-	repoSlug   string
-	accessKey  string
-	root       string
 }
 
 func (b *bbFS) Sub(dir string) (fs.FS, error) {
