@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"io"
+	"iter"
 )
 
 // FilesIterator is an iterator for the files in a directory in the repository.
@@ -51,4 +52,15 @@ func (i *FilesIterator) loadPage() error {
 	}
 	i.lastResult = res
 	return nil
+}
+
+// Files returns a new iter iterator
+func (i *FilesIterator) Files() iter.Seq[*FileInfo] {
+	return func(yield func(v *FileInfo) bool) {
+		for f := i.Next(); f != nil; f = i.Next() {
+			if !yield(f) {
+				return
+			}
+		}
+	}
 }

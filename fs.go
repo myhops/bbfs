@@ -171,7 +171,8 @@ func (b *bbFS) Open(name string) (fs.File, error) {
 	}
 
 	var found *server.FileInfo
-	for f := iter.Next(); f != nil; f = iter.Next() {
+	// Use the new iter over function
+	for f := range iter.Files() {
 		if f.Name == base {
 			found = f
 		}
