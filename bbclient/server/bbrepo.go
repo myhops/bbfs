@@ -28,12 +28,17 @@ func (r *BitbucketRepo) GetContent(ctx context.Context, component string, versio
 }
 
 // GetTags implements server.BitbucketRepository.
-func (r *BitbucketRepo) GetTags(ctx context.Context) ([]string, error) {
+func (r *BitbucketRepo) GetTags(ctx context.Context) ([]*Tag, error) {
 	cmd := &GetTagsCommand{
 		ProjectKey: r.ProjectKey,
 		RepoSlug:   r.RepoSlug,
 	}
-	return r.Client.GetTags(ctx, cmd)
+	tags, err := r.Client.GetTags(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return tags.Tags, nil
 }
 
 // var _ server.BitbucketRepository = &BitbucketRepo{}

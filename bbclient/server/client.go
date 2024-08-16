@@ -59,7 +59,12 @@ func (c *Client) GetFileContent(ctx context.Context, cmd *GetFileContentCommand)
 }
 
 // GetTags returns the tags in the repository.
-func (c *Client) GetTags(ctx context.Context, cmd *GetTagsCommand) ([]string, error) {
+func (c *Client) GetTags(ctx context.Context, cmd *GetTagsCommand) (*GetTagsResponse, error) {
+	return DoCommandResponse(ctx, c, cmd)
+}
+
+// GetCommits returns an array of commits or a single commit.
+func (c *Client) GetCommits(ctx context.Context, cmd *GetCommitsCommand) (*GetCommitsResponse, error) {
 	return DoCommandResponse(ctx, c, cmd)
 }
 

@@ -42,7 +42,7 @@ func TestGetTags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error: %s", err.Error())
 	}
-	t.Logf("%s", tags)
+	t.Logf("%v", tags)
 }
 
 func TestGetFiles(t *testing.T) {

@@ -15,6 +15,15 @@ type GetTagsCommand struct {
 	OrderBy    string
 }
 
+type Tag struct {
+	Name string
+	CommitID string
+}
+
+type GetTagsResponse struct {
+	Tags []*Tag
+}
+
 func (c *GetTagsCommand) Validate() error {
 	if c.ProjectKey == "" {
 		return fmt.Errorf("ProjectKey is missing")
@@ -41,19 +50,26 @@ func (c *GetTagsCommand) newRequestWithContext(ctx context.Context, baseURL stri
 	return req, nil
 }
 
-func (c *GetTagsCommand) ParseResponse(data []byte) ([]string, error) {
-	var resp struct {
+func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
+	type response struct {
 		Values []struct {
 			ID        string `json:"id"`
 			DisplayID string `json:"displayId"`
+			LatestCommit string `json:"latestCommit"`
 		} `json:"values"`
 	}
+	var resp response
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, err
 	}
-	var tags = make([]string, 0, len(resp.Values))
+
+	gtr := &GetTagsResponse{}
+
 	for _, tag := range resp.Values {
-		tags = append(tags, tag.DisplayID)
+		gtr.Tags = append(gtr.Tags, &Tag{
+			Name: tag.DisplayID,
+			CommitID: tag.LatestCommit,
+		})
 	}
-	return tags, nil
+	return gtr, nil
 }
