@@ -86,6 +86,18 @@ func WithLogger(l *slog.Logger) Option {
 	}
 }
 
+// WithMaxCachedItemSize sets the maximum size for items in the cache.
+func WithMaxCachedItemSize(size int64) Option {
+	return func(f *bbFS) {
+		f.client.MaxBodyInCache = size
+	}
+}
+
+// WithDisabledCache disables caching the requests to bitbucket
+func WithDisabledCache() Option {
+	return WithMaxCachedItemSize(-1)
+}
+
 type bbFS struct {
 	client     *server.Client
 	projectKey string

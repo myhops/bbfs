@@ -1,0 +1,21 @@
+meta {
+  name: List Tags
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseURL}}/repositories/:workspace/:repoSlug/refs/tags
+  body: none
+  auth: none
+}
+
+params:query {
+  ~pagelen: 2
+  ~page: 1
+}
+
+params:path {
+  repoSlug: testflags
+  workspace: myhops
+}

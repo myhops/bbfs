@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -8,8 +9,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/myhops/bbfs/nulllog"
+)
+
+const (
+	MaxBodyInCache = 100 * 1024 * 1024
 )
 
 // Secret string masks the value for String to avoid accidental disclosure.
@@ -25,11 +31,20 @@ func (s SecretString) Secret() string {
 	return string(s)
 }
 
+type bodyCache = syncedCache[string, []byte]
+
 // Client is a client for the Bitbucket repository.
 type Client struct {
 	BaseURL   string
 	AccessKey SecretString
 	Logger    *slog.Logger
+	// MaxBodyInCache determines the max body size for requests in the cache.
+	// Defaults to 100Mi.
+	// Set to a negative value to disable caching.
+	MaxBodyInCache int64
+
+	once       sync.Once
+	cache      *bodyCache
 }
 
 func (c *Client) initLogger() {
@@ -43,6 +58,20 @@ func checkStatus(status int) error {
 		return fmt.Errorf("bad status: %s", http.StatusText(status))
 	}
 	return nil
+}
+
+func (c *Client) getCache() *bodyCache {
+	c.once.Do(func() {
+		if c.MaxBodyInCache == 0 {
+			c.MaxBodyInCache = MaxBodyInCache
+		}
+		c.cache = NewCache[string, []byte]()
+	})
+	return c.cache
+}
+
+func (c *Client) ClearCache() {
+	c.getCache().Clear()
 }
 
 // AuthorizeRequest adds an Authorization bearer header to the headers.
@@ -116,15 +145,32 @@ func DoCommandBody(ctx context.Context, client *Client, cmd command) (io.ReadClo
 	if err != nil {
 		return nil, err
 	}
+
+	// Get the body from the cache if present
+	if body, found := client.getCache().Get(req.URL.String()); found {
+		return io.NopCloser(bytes.NewReader(body)), nil
+	}
+
 	client.AuthorizeRequest(req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 	if err := checkStatus(resp.StatusCode); err != nil {
 		return nil, err
 	}
-	return resp.Body, nil
+	// Do not cache over the max size
+	if resp.ContentLength > MaxBodyInCache {
+		return resp.Body, nil
+	}
+	// Save the body in the cache
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading body failed: %w", err)
+	}
+	client.getCache().Set(req.URL.String(), body)
+	return io.NopCloser(bytes.NewReader(body)), nil
 }
 
 // DoCommandResponse performs do for the given command and returns the parsed body.
@@ -143,9 +189,10 @@ func DoCommandResponse[C commandResponse[T], T any](ctx context.Context, client 
 	return cmd.ParseResponse(b)
 }
 
-// OpenRawFile opens the file as specified in the cmd parameter. 
+// OpenRawFile opens the file as specified in the cmd parameter.
 // The returned io.ReadCloser is the body of the response.
 // You need to close the io.ReadCloser after use.
 func (c *Client) OpenRawFile(ctx context.Context, cmd *OpenRawFileCommand) (io.ReadCloser, error) {
+	c.getCache()
 	return DoCommandBody(ctx, c, cmd)
 }
