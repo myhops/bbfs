@@ -51,7 +51,7 @@ func (c *GetCommitsCommand) newRequestWithContext(ctx context.Context, baseURL s
 	}
 	u = u.JoinPath("projects", c.ProjectKey, "repos", c.RepoSlug, "commits", c.CommitID)
 
-	var vals url.Values
+	vals := url.Values{}
 	addValue(vals, "orderBy", c.OrderBy)
 	addValue(vals, "start", strconv.Itoa(c.Start))
 	addValue(vals, "limit", strconv.Itoa(c.Limit))

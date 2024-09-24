@@ -48,7 +48,7 @@ func (c *GetTagsCommand) newRequestWithContext(ctx context.Context, baseURL stri
 	if err != nil {
 		return nil, err
 	}
-	var vals url.Values
+	vals := url.Values{}
 	addValue(vals, "orderBy", c.OrderBy)
 	addValue(vals, "start", strconv.Itoa(c.Start))
 	addValue(vals, "limit", strconv.Itoa(c.Limit))
@@ -82,11 +82,11 @@ func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 	}
 
 	gtr := &GetTagsResponse{
-		IsLastPage: resp.IsLastPage,
-		Limit: resp.Limit,
+		IsLastPage:    resp.IsLastPage,
+		Limit:         resp.Limit,
 		NextPageStart: resp.NextPageStart,
-		Size: resp.Size,
-		Start: resp.Start,
+		Size:          resp.Size,
+		Start:         resp.Start,
 	}
 
 	for _, tag := range resp.Values {
