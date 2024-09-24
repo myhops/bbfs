@@ -21,10 +21,16 @@ type GetTagsCommand struct {
 type Tag struct {
 	Name     string
 	CommitID string
+	Type     string
 }
 
 type GetTagsResponse struct {
-	Tags []*Tag
+	IsLastPage    bool
+	Limit         int
+	NextPageStart int
+	Size          int
+	Start         int
+	Tags          []*Tag
 }
 
 func (c *GetTagsCommand) Validate() error {
@@ -57,10 +63,17 @@ func (c *GetTagsCommand) newRequestWithContext(ctx context.Context, baseURL stri
 
 func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 	type response struct {
-		Values []struct {
-			ID           string `json:"id"`
-			DisplayID    string `json:"displayId"`
-			LatestCommit string `json:"latestCommit"`
+		IsLastPage    bool `json:"isLastPage"`
+		Limit         int  `json:"limit"`
+		NextPageStart int  `json:"nextPageStart"`
+		Size          int  `json:"size"`
+		Start         int  `json:"start"`
+		Values        []struct {
+			ID              string `json:"id"`
+			DisplayID       string `json:"displayId"`
+			LatestCommit    string `json:"latestCommit"`
+			LatestChangeset string `json:"latestChangeset"`
+			Type            string `json:"type"`
 		} `json:"values"`
 	}
 	var resp response
@@ -68,7 +81,13 @@ func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 		return nil, err
 	}
 
-	gtr := &GetTagsResponse{}
+	gtr := &GetTagsResponse{
+		IsLastPage: resp.IsLastPage,
+		Limit: resp.Limit,
+		NextPageStart: resp.NextPageStart,
+		Size: resp.Size,
+		Start: resp.Start,
+	}
 
 	for _, tag := range resp.Values {
 		gtr.Tags = append(gtr.Tags, &Tag{
