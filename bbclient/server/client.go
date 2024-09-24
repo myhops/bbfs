@@ -98,7 +98,7 @@ func (c *Client) GetCommits(ctx context.Context, cmd *GetCommitsCommand) (*GetCo
 }
 
 func addValue(v url.Values, name string, value string) {
-	if value != "" {
+	if value != "" && value != "0" {
 		v.Add(name, value)
 	}
 }

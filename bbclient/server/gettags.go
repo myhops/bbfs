@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 // GetTagsCommand is the command to retrieve all tags from the repository.
@@ -13,10 +14,12 @@ type GetTagsCommand struct {
 	ProjectKey string
 	RepoSlug   string
 	OrderBy    string
+	Start      int
+	Limit      int
 }
 
 type Tag struct {
-	Name string
+	Name     string
 	CommitID string
 }
 
@@ -41,6 +44,8 @@ func (c *GetTagsCommand) newRequestWithContext(ctx context.Context, baseURL stri
 	}
 	var vals url.Values
 	addValue(vals, "orderBy", c.OrderBy)
+	addValue(vals, "start", strconv.Itoa(c.Start))
+	addValue(vals, "limit", strconv.Itoa(c.Limit))
 	u.RawQuery = vals.Encode()
 	us := u.String()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, us, nil)
@@ -53,8 +58,8 @@ func (c *GetTagsCommand) newRequestWithContext(ctx context.Context, baseURL stri
 func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 	type response struct {
 		Values []struct {
-			ID        string `json:"id"`
-			DisplayID string `json:"displayId"`
+			ID           string `json:"id"`
+			DisplayID    string `json:"displayId"`
 			LatestCommit string `json:"latestCommit"`
 		} `json:"values"`
 	}
@@ -67,7 +72,7 @@ func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 
 	for _, tag := range resp.Values {
 		gtr.Tags = append(gtr.Tags, &Tag{
-			Name: tag.DisplayID,
+			Name:     tag.DisplayID,
 			CommitID: tag.LatestCommit,
 		})
 	}
