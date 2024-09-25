@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	TagTypeTag = "TAG"
+	TagTypeTag    = "TAG"
 	TagTypeBranch = "BRANCH"
 )
 
@@ -98,6 +98,7 @@ func (c *GetTagsCommand) ParseResponse(data []byte) (*GetTagsResponse, error) {
 		gtr.Tags = append(gtr.Tags, &Tag{
 			Name:     tag.DisplayID,
 			CommitID: tag.LatestCommit,
+			Type:     tag.Type,
 		})
 	}
 	return gtr, nil
