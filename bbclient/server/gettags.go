@@ -9,6 +9,11 @@ import (
 	"strconv"
 )
 
+const (
+	TagTypeTag = "TAG"
+	TagTypeBranch = "BRANCH"
+)
+
 // GetTagsCommand is the command to retrieve all tags from the repository.
 type GetTagsCommand struct {
 	ProjectKey string
