@@ -145,7 +145,7 @@ func cmdGetTags(opts *options) error {
 	}
 	// Print the result.
 	for _, e := range resp.Tags {
-		fmt.Printf("%s\n", e)
+		fmt.Printf("name %s, type %s\n", e.Name, e.Type)
 	}
 	return nil
 }
