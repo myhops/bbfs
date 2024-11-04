@@ -18,6 +18,24 @@ const (
 	MaxBodyInCache = 100 * 1024 * 1024
 )
 
+type orderBy int
+
+const (
+	OrderByModification orderBy = iota
+	OrderByAlphabetical
+)
+
+func (o orderBy) String() string {
+	switch o {
+	case OrderByAlphabetical:
+		return "ALPHABETICAL"
+	case OrderByModification:
+		return "MODIFICATION"
+	default:
+		return ""
+	}
+}
+
 // Secret string masks the value for String to avoid accidental disclosure.
 type SecretString string
 
