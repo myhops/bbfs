@@ -136,6 +136,8 @@ func cmdGetTags(opts *options) error {
 	cmd := &server.GetTagsCommand{
 		ProjectKey: opts.ProjectKey,
 		RepoSlug:   opts.RepoSlug,
+		Limit:      opts.Limit,
+		OrderBy:    opts.OrderBy,
 	}
 
 	// execute command
@@ -143,6 +145,7 @@ func cmdGetTags(opts *options) error {
 	if err != nil {
 		return err
 	}
+
 	// Print the result.
 	for _, e := range resp.Tags {
 		fmt.Printf("name %s, type %s\n", e.Name, e.Type)
