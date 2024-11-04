@@ -157,12 +157,16 @@ func run(args []string, getenv func(string) string) error {
 		return err
 	}
 
+	if opts.Command == "" {
+		return fmt.Errorf("no command specified")
+	}
+
 	switch cmd := opts.Command; cmd {
 	case "tags":
 		return cmdGetTags(opts)
 	}
 
-	return nil
+	return fmt.Errorf("bad command: %s", opts.Command)
 }
 
 func main() {
