@@ -29,7 +29,7 @@ type options struct {
 func defaultOptions() *options {
 	return &options{
 		BaseURL: "https://bitbucket.belastingdienst.nl/rest/api/latest",
-		OrderBy: "MODIFICATION",
+		OrderBy: server.OrderByModification.String(),
 	}
 }
 
